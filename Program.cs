@@ -31,10 +31,10 @@ namespace myApp
 
         static void Main(string[] args)
         {
-            IDataView trainingData = TextLoader.Read(
-                typeof(IrisData),
-                "iris-data.txt",
-                separator: ",");
+            TextLoader loader = TextLoader.Create(typeof(IrisData));
+            loader.Separator = ",";
+
+            IDataView trainingData = loader.Read("iris-data.txt");
 
             var estimator = new ValueToKeyMappingEstimator("Label")
                 .Append(new ColumnConcatenatingEstimator("Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
