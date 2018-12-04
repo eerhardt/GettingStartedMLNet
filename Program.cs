@@ -1,4 +1,5 @@
 ﻿using Microsoft.ML;
+using Microsoft.ML.Runtime.Api;
 using Microsoft.ML.Runtime.Data;
 using System;
 
@@ -8,10 +9,15 @@ namespace myApp
     {
         public class IrisData
         {
+            [Column(0)]
             public float SepalLength { get; set; }
+            [Column(1)]
             public float SepalWidth { get; set; }
+            [Column(2)]
             public float PetalLength { get; set; }
+            [Column(3)]
             public float PetalWidth { get; set; }
+            [Column(4)]
             public string Label { get; set; }
         }
 
@@ -25,16 +31,9 @@ namespace myApp
             MLContext mlContext = new MLContext();
 
             IDataView trainingData = mlContext.Data.ReadFromTextFile(
-                new[]
-                {
-                    new TextLoader.Column("SepalLength", DataKind.R4, 0),
-                    new TextLoader.Column("SepalWidth", DataKind.R4, 1),
-                    new TextLoader.Column("PetalLength", DataKind.R4, 2),
-                    new TextLoader.Column("PetalWidth", DataKind.R4, 3),
-                    new TextLoader.Column("Label", DataKind.Text, 4),
-                },
+                typeof(IrisData),
                 "iris-data.txt",
-                options => options.Separator = ",");
+                separator: ",");
 
             var estimator = mlContext.Transforms.Conversion.MapValueToKey("Label")
                 .Append(mlContext.Transforms.Concatenate("Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
