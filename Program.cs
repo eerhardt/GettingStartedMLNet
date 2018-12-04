@@ -31,17 +31,15 @@ namespace myApp
 
         static void Main(string[] args)
         {
-            MLContext mlContext = new MLContext();
-
-            IDataView trainingData = mlContext.Data.ReadFromTextFile(
+            IDataView trainingData = TextLoader.Read(
                 typeof(IrisData),
                 "iris-data.txt",
                 separator: ",");
 
-            var estimator = new ValueToKeyMappingEstimator(mlContext, "Label")
-                .Append(new ColumnConcatenatingEstimator(mlContext, "Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
-                .Append(new SdcaMultiClassTrainer(mlContext))
-                .Append(new KeyToValueMappingEstimator(mlContext, "PredictedLabel"));
+            var estimator = new ValueToKeyMappingEstimator("Label")
+                .Append(new ColumnConcatenatingEstimator("Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
+                .Append(new SdcaMultiClassTrainer())
+                .Append(new KeyToValueMappingEstimator("PredictedLabel"));
 
             var model = estimator.Train<IrisData, IrisPrediction>(trainingData);
 
