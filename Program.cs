@@ -43,7 +43,7 @@ namespace myApp
                 .Append(new SdcaMultiClassTrainer(mlContext))
                 .Append(new KeyToValueMappingEstimator(mlContext, "PredictedLabel"));
 
-            var model = estimator.Fit(trainingData);
+            var model = estimator.Train<IrisData, IrisPrediction>(trainingData);
 
             IrisData newInput = new IrisData()
             {
@@ -52,9 +52,7 @@ namespace myApp
                 PetalLength = 0.2f,
                 PetalWidth = 5.1f,
             };
-            IrisPrediction prediction = model
-                .MakePredictionFunction<IrisData, IrisPrediction>(mlContext)
-                .Predict(newInput);
+            IrisPrediction prediction = model.Predict(newInput);
 
             Console.WriteLine($"Predicted flower type is: {prediction.PredictedLabel}");
         }
