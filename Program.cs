@@ -1,6 +1,9 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.Runtime.Api;
 using Microsoft.ML.Runtime.Data;
+using Microsoft.ML.Transforms;
+using Microsoft.ML.Transforms.Conversions;
+using Microsoft.ML.Trainers;
 using System;
 
 namespace myApp
@@ -35,10 +38,10 @@ namespace myApp
                 "iris-data.txt",
                 separator: ",");
 
-            var estimator = mlContext.Transforms.Conversion.MapValueToKey("Label")
-                .Append(mlContext.Transforms.Concatenate("Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
-                .Append(mlContext.MulticlassClassification.Trainers.StochasticDualCoordinateAscent())
-                .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+            var estimator = new ValueToKeyMappingEstimator(mlContext, "Label")
+                .Append(new ColumnConcatenatingEstimator(mlContext, "Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
+                .Append(new SdcaMultiClassTrainer(mlContext))
+                .Append(new KeyToValueMappingEstimator(mlContext, "PredictedLabel"));
 
             var model = estimator.Fit(trainingData);
 
