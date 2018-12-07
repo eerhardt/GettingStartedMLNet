@@ -29,7 +29,7 @@ namespace myApp
             public string PredictedLabel { get; set; }
         }
 
-        static void Main(string[] args)
+        static void Main1(string[] args)
         {
             TextLoader loader = TextLoader.Create(typeof(IrisData));
             loader.Separator = ",";
@@ -37,11 +37,14 @@ namespace myApp
             IDataView trainingData = loader.Read("iris-data.txt");
 
             var estimator = new ValueToKeyMappingEstimator("Label")
-                .Append(new ColumnConcatenatingEstimator("Features", "SepalLength", "SepalWidth", "PetalLength", "PetalWidth"))
-                .Append(new SdcaMultiClassTrainer())
+                .Append(new ColumnConcatenatingEstimator(new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" }, "Features"))
+                .Append(new SdcaMultiClassTrainer()
+                {
+                    BiasLearningRate = 0.5f
+                })
                 .Append(new KeyToValueMappingEstimator("PredictedLabel"));
 
-            var model = estimator.Train<IrisData, IrisPrediction>(trainingData);
+            var model = estimator.Fit(trainingData);
 
             IrisData newInput = new IrisData()
             {
@@ -50,7 +53,37 @@ namespace myApp
                 PetalLength = 0.2f,
                 PetalWidth = 5.1f,
             };
-            IrisPrediction prediction = model.Predict(newInput);
+            IrisPrediction prediction = model
+                .MakePredictionFunction<IrisData, IrisPrediction>()
+                .Predict(newInput);
+
+            Console.WriteLine($"Predicted flower type is: {prediction.PredictedLabel}");
+        }
+
+        static void Main2(string[] args)
+        {
+            TextLoader loader = TextLoader.Create(typeof(IrisData));
+            loader.Separator = ",";
+
+            IDataView trainingData = loader.Read("iris-data.txt");
+
+            var estimator = Transforms.MapValueToKey("Label")
+                .Append(Transforms.Concatenate(new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" }, "Features"))
+                .Append(MulticlassClassificationTrainers.StochasticDualCoordinateAscent())
+                .Append(Transforms.MapKeyToValue("PredictedLabel"));
+
+            var model = estimator.Fit(trainingData);
+
+            IrisData newInput = new IrisData()
+            {
+                SepalLength = 3.3f,
+                SepalWidth = 1.6f,
+                PetalLength = 0.2f,
+                PetalWidth = 5.1f,
+            };
+            IrisPrediction prediction = model
+                .MakePredictionFunction<IrisData, IrisPrediction>()
+                .Predict(newInput);
 
             Console.WriteLine($"Predicted flower type is: {prediction.PredictedLabel}");
         }
