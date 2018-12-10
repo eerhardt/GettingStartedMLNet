@@ -1,9 +1,8 @@
-﻿using Microsoft.ML;
-using Microsoft.ML.Runtime.Api;
+﻿using Microsoft.ML.Runtime.Api;
 using Microsoft.ML.Runtime.Data;
+using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms;
 using Microsoft.ML.Transforms.Conversions;
-using Microsoft.ML.Trainers;
 using System;
 
 namespace myApp
@@ -29,50 +28,23 @@ namespace myApp
             public string PredictedLabel { get; set; }
         }
 
-        static void Main1(string[] args)
+        static void Main(string[] args)
         {
-            TextLoader loader = TextLoader.Create(typeof(IrisData));
-            loader.Separator = ",";
-
+            TextLoader loader = TextLoader.Create(typeof(IrisData), separator: ",");
             IDataView trainingData = loader.Read("iris-data.txt");
 
-            var estimator = new ValueToKeyMappingEstimator("Label")
-                .Append(new ColumnConcatenatingEstimator(new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" }, "Features"))
-                .Append(new SdcaMultiClassTrainer()
-                {
-                    BiasLearningRate = 0.5f
-                })
-                .Append(new KeyToValueMappingEstimator("PredictedLabel"));
+            var pipeline = new EstimatorChain();
+            pipeline.Add(new ValueToKeyMappingEstimator("Label"));
+            pipeline.Add(new ColumnConcatenatingEstimator(
+                inputColumns: new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" },
+                outputColumn: "Features"));
+            pipeline.Add(new SdcaMultiClassTrainer(
+                featureColumn: "Features",
+                labelColumn: "Label",
+                predictedLabelColumn: "PredictedLabel"));
+            pipeline.Add(new KeyToValueMappingEstimator("PredictedLabel"));
 
-            var model = estimator.Fit(trainingData);
-
-            IrisData newInput = new IrisData()
-            {
-                SepalLength = 3.3f,
-                SepalWidth = 1.6f,
-                PetalLength = 0.2f,
-                PetalWidth = 5.1f,
-            };
-            IrisPrediction prediction = model
-                .MakePredictionFunction<IrisData, IrisPrediction>()
-                .Predict(newInput);
-
-            Console.WriteLine($"Predicted flower type is: {prediction.PredictedLabel}");
-        }
-
-        static void Main2(string[] args)
-        {
-            TextLoader loader = TextLoader.Create(typeof(IrisData));
-            loader.Separator = ",";
-
-            IDataView trainingData = loader.Read("iris-data.txt");
-
-            var estimator = Transforms.MapValueToKey("Label")
-                .Append(Transforms.Concatenate(new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" }, "Features"))
-                .Append(MulticlassClassificationTrainers.StochasticDualCoordinateAscent())
-                .Append(Transforms.MapKeyToValue("PredictedLabel"));
-
-            var model = estimator.Fit(trainingData);
+            var model = pipeline.Fit(trainingData);
 
             IrisData newInput = new IrisData()
             {
