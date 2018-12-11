@@ -34,15 +34,21 @@ namespace myApp
             IDataView trainingData = loader.Read("iris-data.txt");
 
             var pipeline = new EstimatorChain();
-            pipeline.Add(new ValueToKeyMappingEstimator("Label"));
+            pipeline.Add(new ValueToKeyMappingEstimator(nameof(IrisData.Label)));
             pipeline.Add(new ColumnConcatenatingEstimator(
-                inputColumns: new[] { "SepalLength", "SepalWidth", "PetalLength", "PetalWidth" },
-                outputColumn: "Features"));
+                inputColumns: new[] 
+                {
+                    nameof(IrisData.SepalLength),
+                    nameof(IrisData.SepalWidth),
+                    nameof(IrisData.PetalLength),
+                    nameof(IrisData.PetalWidth)
+                },
+                outputColumn: DefaultColumnNames.Features));
             pipeline.Add(new SdcaMultiClassTrainer(
-                featureColumn: "Features",
-                labelColumn: "Label",
-                predictedLabelColumn: "PredictedLabel"));
-            pipeline.Add(new KeyToValueMappingEstimator("PredictedLabel"));
+                featureColumn: DefaultColumnNames.Features,
+                labelColumn: nameof(IrisData.Label),
+                predictedLabelColumn: nameof(IrisPrediction.PredictedLabel)));
+            pipeline.Add(new KeyToValueMappingEstimator(nameof(IrisPrediction.PredictedLabel)));
 
             var model = pipeline.Fit(trainingData);
 
